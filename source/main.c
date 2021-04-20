@@ -18,6 +18,7 @@
 typedef struct {
 	short int color;
 	int x, y;
+	int step = 32;
 } Pixel;
 
 struct fbs framebufferstruct;
@@ -44,7 +45,7 @@ int main(){
 	Pixel *pixel;
 	pixel = malloc(sizeof(Pixel));
 	
-	// Bottom Score and Stats Keeping 
+	// Bottom Score and Stats Keeping bar
 	//unsigned int quarter,byte,word;
 	for (int y = 672; y < 720; y++) // height
 	{
@@ -97,7 +98,7 @@ int main(){
 
 	int channels = 0;
 	// Drawing the channels
-	while(channels < 5){
+	while(channels < 4){
 
 		for (int y = 512 - channels * 160; y < 640 - channels * 160; y++) // height
 		{
@@ -129,20 +130,6 @@ int main(){
 
 	}
 
-	// Main Menu 
-	// int i=0;
-	// for (int y = 0; y < 720; y++) // height
-	// {
-	// 	for (int x = 0; x < 1280; x++) //width
-	// 	{	
-	// 			pixel->color = mainMenuPtr[i]; // dark green
-	// 			pixel->x = x;
-	// 			pixel->y = y;
-	
-	// 			drawPixel(pixel);
-	// 			i++;
-	// 	}
-	// }
 
 	/* free pixel's allocated memory */
 	free(pixel);
@@ -160,7 +147,4 @@ void drawPixel(Pixel *pixel){
 	*((unsigned short int*)(framebufferstruct.fptr + location)) = pixel->color;
 }
 
-void freePixel(){
-	
-}
 
