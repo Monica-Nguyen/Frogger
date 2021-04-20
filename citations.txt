@@ -1,0 +1,13 @@
+Images taken from:
+
+https://www.microsoft.com/en-ca/p/frogger/bw86sf1h53nx?activetab=pivot:overviewtab
+https://www.pikpng.com/pngvi/mxwTwT_press-start-png-clipart/
+https://www.clipartmax.com/middle/m2i8m2N4N4Z5K9K9_free-image-on-pixabay-star-icon-png/
+https://www.pngkey.com/detail/u2q8w7e6y3a9t4i1_cartoon-semi-truck-clipart-cliparthut-free-clipart-clipart/
+https://www.clipartmax.com/middle/m2i8K9N4Z5b1d3d3_red-hearth-cartoon-heart/
+https://www.pngkey.com/maxpic/u2q8r5u2a9e6u2q8/
+https://www.kissclipart.com/clipart-tree-frog-aoa0nm/
+https://www.pngwing.com/en/free-png-izphg
+https://hipwallpaper.com/grass-backgrounds/
+
+Code used to draw images is inspired from DrawImage folder posted on D2L
