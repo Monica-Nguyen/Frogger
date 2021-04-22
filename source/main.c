@@ -74,6 +74,7 @@ void drawGameBackground(Pixel *pixel);
 void drawFrog(Pixel *pixel, int xPos, int yPos);
 void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
+void clearScreen(Pixel *pixel);
 
 int main()
 {
@@ -118,6 +119,7 @@ int main()
     bool startFlag = false;
     int xPos = 20;
     int yPos = 21;
+    int start = 1; // 0 is quit, 1 is start
     
     while(1){
         unsigned int button = Read_SNES(gpioPtr);
@@ -125,65 +127,56 @@ int main()
 
         if (startFlag == false){
             drawStartFrogger(pixel);
-            int start = 0; // 0 is start, 1 is quit
+
             while(1){
                 unsigned int button = Read_SNES(gpioPtr);
                 if (button == BUTTON_RIGHT){
-                    drawQuitFrogger(pixel);
-                    startFlag = true;    
+                    drawQuitFrogger(pixel); 
                     start = 0;                
                 } 
 
                 if (button == BUTTON_LEFT){
                     drawStartFrogger(pixel);
-                    startFlag = true;  
                     start = 1;                        
                 }
 
-                if (button == BUTTON_A && start == 0){
-                    drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos);                    
-                }
-
                 if (button == BUTTON_A && start == 1){
+                    startFlag = true;  
                     drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos); 
+                    drawFrog(pixel, xPos, yPos);   
+                    break;                 
                 }
 
+                if (button == BUTTON_A && start == 0){
+                    clearScreen(pixel);
+                    return(0);
+                    break;
+                }
             }
         }
 
         
-        if (button == BUTTON_LEFT){
-            
-            if (xPos != 0){
-                xPos = xPos - 1;
-            }
+        if (button == BUTTON_LEFT && xPos != 0){         
+            xPos = xPos - 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
         }
 
-        if (button == BUTTON_RIGHT){
-            if (xPos != 40){
-                xPos = xPos + 1;
-            }
+        if (button == BUTTON_RIGHT && xPos < 40){
+            xPos = xPos + 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
         }        
 
-        if (button == BUTTON_UP){
-            if (yPos != 22){
-                yPos = yPos - 1;
-            }
+        if (button == BUTTON_UP && yPos != 22){
+            yPos = yPos - 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
 
         }
 
-        if (button == BUTTON_DOWN){
-            if (yPos != 0){
-                yPos = yPos + 1;
-            }
+        if (button == BUTTON_DOWN && yPos != 0){
+            yPos = yPos + 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
         }  
@@ -196,7 +189,6 @@ int main()
                 unsigned int button = Read_SNES(gpioPtr);
                 if (button == BUTTON_DOWN){
                     drawQuitPause(pixel);
-                    printf("HELLO");
                 }
                 if (button == BUTTON_UP){
                     drawRestartPause(pixel);
@@ -419,6 +411,21 @@ void drawQuitFrogger(Pixel *pixel){
 	
 				drawPixel(pixel);
 				i++;		
+		}
+
+	}
+}
+
+void clearScreen(Pixel *pixel){
+
+	for (int y = 0; y < 720; y++) // height
+	{
+		for (int x = 0; x < 1280; x++) //width
+		{	
+				pixel->color = 0x000000;
+				pixel->x = x;
+				pixel->y = y;
+				drawPixel(pixel);		
 		}
 
 	}
