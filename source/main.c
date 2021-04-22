@@ -3,6 +3,7 @@
 #include "initGPIO.h"
 #include <wiringPi.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/mman.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -76,9 +77,42 @@ void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
 void clearScreen(Pixel *pixel);
 
+//logic functions
+void checkCollisions(int n);
+void createGameArray();
+void placeFrogger(int n, int m);
+void resetFrogger(int n, int m);
+void generateCarLocation();
+void moveCarLocation();
+void displayBoard();
+void *mainRun();
+void *runner (void *carID);
+void placeCar(long car, int pos);
+
+struct Game {
+	long state;				//0 - is main menu, 1 - is playing game, 2 - game is paused
+	int level;
+	int timeremaining;
+	int lives;
+	int score;
+	int moves;
+	int startTime;
+	bool gameOver;
+	bool win;
+	bool lose;
+	bool displayOn;
+	int boardArray[21][40];
+    int carNum;
+    int car[3];
+}; 
+struct Game g;
+
+
 int main()
 {
-	// get gpio pointer
+
+
+    // get gpio pointer
     unsigned int *gpioPtr = getGPIOPtr();  
 	int latch = 0;
     int data = 1;
@@ -119,9 +153,22 @@ int main()
     bool startFlag = false;
     int xPos = 20;
     int yPos = 21;
+    int frogX = 20;
+    int frogY = 19;
+    int prevFX;
+    int prevFY;
     int start = 1; // 0 is quit, 1 is start
-    
+    g.carNum = 1;
+
+
     while(1){
+        pthread_t main_thread;
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_create(&main_thread, &attr, mainRun, NULL);
+        //After main thread and threads finish
+        pthread_exit(NULL);
+
         unsigned int button = Read_SNES(gpioPtr);
        // delayMicroseconds(1500);
 
@@ -143,7 +190,9 @@ int main()
                 if (button == BUTTON_A && start == 1){
                     startFlag = true;  
                     drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos);   
+                    drawFrog(pixel, xPos, yPos);
+                    placeFrogger(frogX, frogY);  
+                  //  displayBoard(); 
                     break;                 
                 }
 
@@ -157,28 +206,60 @@ int main()
 
         
         if (button == BUTTON_LEFT && xPos > 0){         
+            prevFX = frogX;
+            prevFY = frogY;
             xPos = xPos - 1;
+            frogY = frogY - 1;
             drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos); 
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
         }
 
         if (button == BUTTON_RIGHT && xPos < 39){
+            prevFX = frogX;
+            prevFY = frogY;
             xPos = xPos + 1;
+            frogY = frogY + 1;
             drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos); 
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
         }        
 
         if (button == BUTTON_UP && yPos < 22){
+            prevFX = frogX;
+            prevFY = frogY;
             yPos = yPos - 1;
+            frogX = frogX - 1;
             drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos); 
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
 
         }
 
         if (button == BUTTON_DOWN && yPos > 0){
+            prevFX = frogX;
+            prevFY = frogY;
             yPos = yPos + 1;
+            frogX = frogX + 1;
             drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos); 
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
         }  
 
         bool pause = false;
@@ -229,6 +310,122 @@ char * buttons[11] = {"B", "A", "Y", "X", "SELECT", "JOYPAD DOWN", "JOYPAD LEFT"
     // }
 
 }
+
+
+//**************************LOGIC FUNCTIONS***********************
+void createGameArray() {
+    int i, j;
+    for (i = 0; i < 21; i++){
+        for (j = 0; j < 40; j++){
+            g.boardArray[i][j] = 0;                                 
+        }
+    }
+}
+
+
+void displayBoard(){
+    int i, j;
+    for (i=0; i<21; i++){
+        for (j=0; j<40; j++){
+            printf(" %d ", g.boardArray[i][j]);
+}
+        printf("\n");
+        printf("-----------------------------------------------------------------------------------------------------------------------\n");
+    }
+    printf("\nEnd of Cycle\n");
+}
+
+//will update struct stats 
+void placeFrogger(int n, int m){
+	g.boardArray[n][m] = 5;
+}
+
+//will update struct stats 
+void resetFrogger(int n, int m){
+	g.boardArray[n][m] = 0;
+}
+
+void testPlaceCar(long car, int pos){
+     if (car == 0){
+        g.boardArray[18][pos] = 3;
+    }
+
+    if (car == 1){
+        g.boardArray[19][pos] = 3;
+    }
+
+    if (car == 2){
+        g.boardArray[20][pos] = 3;
+    }
+    
+}
+
+void placeCar(long car, int pos){
+    if (car == 0){
+           if (pos < 40){
+                g.boardArray[18][pos] = 0;
+            }
+        g.boardArray[18][pos-1] = 3;
+    }
+
+    if (car == 1){
+           if (pos < 40){
+                g.boardArray[19][pos] = 0;
+            }
+        g.boardArray[19][pos-1] = 3;
+    }
+
+    if (car == 2){
+           if (pos < 40){
+                g.boardArray[20][pos] = 0;
+            }
+        g.boardArray[20][pos-1] = 3;
+    }
+    
+ 
+
+    displayBoard();
+}
+
+//**************************MAIN THREAD**********************
+void *mainRun()
+    {
+        //main thread waits until all horses finish the race
+        //periodically displays the progress of each horse as an arrow
+        //main thread should boot up home/pause screen
+        g.startTime = time(NULL);
+        g.gameOver = false;
+        pthread_t carLogic[g.carNum];
+
+		//Start state of game 
+		long i = 1;
+        for (i = 0; i < 2; i++){
+        pthread_create(&carLogic[i], NULL, runner, (void *)i);
+        }
+	// while (!g.gameOver) {
+    //         displayBoard();
+	// 	}
+	
+  	//join threads so the main thread can gather the progress
+      long p;
+      for (p = 0; p < g.carNum; p++){
+     pthread_join(carLogic[p], NULL);
+	// pthread_join(gameDisplay, NULL); 
+    } 	
+}
+
+void *runner (void *carID){
+    int i;
+    long h = (long) carID;
+    for (i = 40; i > 0; i--){
+        g.car[h]= i;
+        sleep(2);
+        placeCar(h, i);
+    }
+}
+
+
+
 //**************************INITGPIO************************
 //Funcion which initializes a GPIO line. The function is general for lines 9, 10 and 11
 //Accepts 2 paramaters:
