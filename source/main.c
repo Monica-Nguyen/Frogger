@@ -169,14 +169,14 @@ int main()
             drawFrog(pixel, xPos, yPos); 
         }        
 
-        if (button == BUTTON_UP && yPos < 22){
+        if (button == BUTTON_UP && yPos < 22 && yPos > 1){
             yPos = yPos - 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
 
         }
 
-        if (button == BUTTON_DOWN && yPos > 0){
+        if (button == BUTTON_DOWN && yPos >= 0 && yPos < 21){
             yPos = yPos + 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
