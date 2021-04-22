@@ -26,7 +26,7 @@ struct fbs initFbInfo(void)
         perror("Error: cannot open framebuffer device");
         exit(1);
     }
-    printf("The framebuffer device was opened successfully.\n");
+    //printf("The framebuffer device was opened successfully.\n");
 
     // Get fixed screen information
     if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
@@ -44,7 +44,7 @@ struct fbs initFbInfo(void)
 
     // Figure out the size of the screen in bytes
     screensize = vinfo.xres_virtual * vinfo.yres_virtual * vinfo.bits_per_pixel / 8;
-    printf("Hello: %d",vinfo.bits_per_pixel);
+    //printf("Hello: %d",vinfo.bits_per_pixel);
 
     // Map the device to memory
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
@@ -54,8 +54,8 @@ struct fbs initFbInfo(void)
         exit(4);
     }
     
-    printf("The framebuffer device was mapped to memory successfully.\n");
-    printf("%dx%d, %dbpp\n", vinfo.xoffset, vinfo.yoffset, vinfo.bits_per_pixel);
+    //printf("The framebuffer device was mapped to memory successfully.\n");
+    //printf("%dx%d, %dbpp\n", vinfo.xoffset, vinfo.yoffset, vinfo.bits_per_pixel);
     
     struct fbs result = {(char *)fbp, (int) vinfo.xoffset, (int) vinfo.yoffset,
         (int) vinfo.bits_per_pixel, (int) finfo.line_length,

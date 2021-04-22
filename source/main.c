@@ -1,12 +1,14 @@
 #include <unistd.h>
 #include <stdio.h>
-#include "initGPIO.h"
 #include <wiringPi.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/mman.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
+#include <math.h>
+#include "initGPIO.h"
 #include "framebuffer.h"
 #include "bomb.h"
 #include "frog.h"
@@ -76,6 +78,7 @@ void drawFrog(Pixel *pixel, int xPos, int yPos);
 void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
 void clearScreen(Pixel *pixel);
+void drawStar(Pixel *pixel, int starX, int starY);
 
 //logic functions
 void checkCollisions(int n);
@@ -159,8 +162,8 @@ int main()
     int prevFY;
     int start = 1; // 0 is quit, 1 is start
     g.carNum = 1;
-
-
+    int score = 0;
+    
     while(1){
         pthread_t main_thread;
         pthread_attr_t attr;
@@ -173,6 +176,8 @@ int main()
        // delayMicroseconds(1500);
 
         if (startFlag == false){
+            xPos = 20;
+            yPos = 21;
             drawStartFrogger(pixel);
 
             while(1){
@@ -233,7 +238,8 @@ int main()
            // displayBoard();   
         }        
 
-        if (button == BUTTON_UP && yPos < 22){
+
+        if (button == BUTTON_UP && yPos < 22 && yPos > 1){
             prevFX = frogX;
             prevFY = frogY;
             yPos = yPos - 1;
@@ -248,7 +254,7 @@ int main()
 
         }
 
-        if (button == BUTTON_DOWN && yPos > 0){
+        if (button == BUTTON_DOWN && yPos >= 0 && yPos < 21){
             prevFX = frogX;
             prevFY = frogY;
             yPos = yPos + 1;
@@ -262,18 +268,39 @@ int main()
            // displayBoard();   
         }  
 
-        bool pause = false;
+        int pause = 0; // 0 is restart, 1 is quit
         if (button == BUTTON_START){
-            pause = true;
             drawRestartPause(pixel);
             while(1){
                 unsigned int button = Read_SNES(gpioPtr);
-                if (button == BUTTON_DOWN){
+                if (button == BUTTON_DOWN){ // go to quit
                     drawQuitPause(pixel);
+                    pause = 1;
                 }
-                if (button == BUTTON_UP){
-                    drawRestartPause(pixel);
+                if (button == BUTTON_UP){ // go to restart
+                    drawRestartPause(pixel);                    
+                    pause = 0;
                 }
+                if (button == BUTTON_START){ // exit menu 
+                    drawGameBackground(pixel);
+                    drawFrog(pixel, xPos, yPos);                     
+                    break;
+                }
+                if (button == BUTTON_A && pause == 0){  // restart position 
+                    int xPos = 20;
+                    int yPos = 21;
+                    drawGameBackground(pixel);
+                    drawFrog(pixel, xPos, yPos);
+                    break;
+                }
+                if (button == BUTTON_A && pause == 1){
+                    int xPos = 20;
+                    int yPos = 21;
+                    drawStartFrogger(pixel);
+                    startFlag = false;
+                    break;
+                }
+
             }
 
         }
@@ -638,7 +665,7 @@ void drawGameBackground(Pixel *pixel){
 	// short int *lilyPadPtr=(short int *) lilyPadImage.pixel_data;
 	// short int *logPtr=(short int *) logImage.pixel_data;
 	// short int *truckRightPtr=(short int *) truckRightImage.pixel_data;
-	//short int *starPtr=(short int *) starImage.pixel_data;
+
 
 	// Bottom Score and Stats Keeping bar
 	//unsigned int quarter,byte,word;
@@ -690,15 +717,15 @@ void drawGameBackground(Pixel *pixel){
 		grassPatches = grassPatches + 1;
 	}
 
-	int channels = 0;
+	int channel = 0;
 	// Drawing the channels
-	while(channels < 4){
+	while(channel < 4){
 
-		for (int y = 512 - channels * 160; y < 640 - channels * 160; y++) // height
+		for (int y = 512 - channel * 160; y < 640 - channel * 160; y++) // height
 		{
 			for (int x = 0; x < 1280; x++) //width
 			{	
-                    if (channels == 1 || channels == 3){
+                    if (channel == 1 || channel == 3){
                         pixel->color = 0x0000FF;
                     }
                     else{ 
@@ -711,7 +738,33 @@ void drawGameBackground(Pixel *pixel){
 			}
 
 		}
-		channels = channels + 1;
+        
+        srand(time(NULL));
+        int starY;
+        int starX;
+        
+        if (channel == 0){
+            starY = rand() % 15;
+            starY = starY / 4 + 17;
+            starX = rand() % 39;
+            drawStar(pixel, starX, starY);
+        }
+
+        else if (channel == 0){
+            
+        }
+
+        else if (channel == 2){
+
+        }
+        
+        else {
+
+        }
+
+        drawStar(pixel, starX, starY);
+
+		channel = channel + 1;
 	}
 
 
@@ -766,6 +819,25 @@ void drawRestartPause(Pixel *pixel){
 		for (int x = 393; x < 888; x++) //width
 		{	
 				pixel->color = restartPtr[i];
+				pixel->x = x;
+				pixel->y = y;
+	
+				drawPixel(pixel);
+				i++;		
+		}
+
+	}
+}
+
+void drawStar(Pixel *pixel, int starX, int starY){
+	short int *starPtr=(short int *) starImage.pixel_data;
+
+    int i=0;
+	for (int y = starY * 32 - 32; y < starY * 32; y++) // height
+	{
+		for (int x = starX * 32; x < 32 + starX * 32; x++) //width
+		{	
+				pixel->color = starPtr[i];
 				pixel->x = x;
 				pixel->y = y;
 	
