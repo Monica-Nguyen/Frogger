@@ -113,209 +113,13 @@ struct Game g;
 
 int main()
 {
-
-
-    // get gpio pointer
-    unsigned int *gpioPtr = getGPIOPtr();  
-	int latch = 0;
-    int data = 1;
-    int clock = 2;
-    //int button_combos[11] = {1, 256, 2, 512, 4, 32, 64, 128, 16, 1024, 2048};
-
-    //set GPIO pin 9 latch line to output
-    init_GPIO(gpioPtr, latch);
-
-    //set GPIO pin 10 data to input
-    init_GPIO(gpioPtr, data);
-
-    //set GPIO pin 11 clock to output
-    init_GPIO(gpioPtr, clock);
-
-    // Clear the LATCH line (GPIO 9) to low
-    clear_GPIO9(gpioPtr);
-
-    // Set CLOCK line (GPIO 11) to high
-    Write_Clock(gpioPtr);
-
-	/* initialize + get FBS */
-	framebufferstruct = initFbInfo();
-	
-	//short int *heartPtr=(short int *) heartImage.pixel_data;
-	// short int *bombPtr=(short int *) bombImage.pixel_data;
-	// short int *carLeftPtr=(short int *) carLeftImage.pixclerael_data;
-	//short int *frogPtr=(short int *) frogImage.pixel_data;
-	//short int *landPtr=(short int *) landImage.pixel_data;
-	// short int *lilyPadPtr=(short int *) lilyPadImage.pixel_data;
-	// short int *logPtr=(short int *) logImage.pixel_data;
-	// short int *truckRightPtr=(short int *) truckRightImage.pixel_data;
-	//short int *starPtr=(short int *) starImage.pixel_data;
-	
-	/* initialize a pixel */
-	Pixel *pixel;
-	pixel = malloc(sizeof(Pixel));
-    bool startFlag = false;
-    int xPos = 20;
-    int yPos = 21;
-    int frogX = 20;
-    int frogY = 19;
-    int prevFX;
-    int prevFY;
-    int start = 1; // 0 is quit, 1 is start
-    g.carNum = 1;
-    int score = 0;
-    
-    while(1){
-        pthread_t main_thread;
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_create(&main_thread, &attr, mainRun, NULL);
-        //After main thread and threads finish
-        pthread_exit(NULL);
-
-        unsigned int button = Read_SNES(gpioPtr);
-       // delayMicroseconds(1500);
-
-        if (startFlag == false){
-            xPos = 20;
-            yPos = 21;
-            drawStartFrogger(pixel);
-
-            while(1){
-                unsigned int button = Read_SNES(gpioPtr);
-                if (button == BUTTON_RIGHT){
-                    drawQuitFrogger(pixel); 
-                    start = 0;                
-                } 
-
-                if (button == BUTTON_LEFT){
-                    drawStartFrogger(pixel);
-                    start = 1;                        
-                }
-
-                if (button == BUTTON_A && start == 1){
-                    startFlag = true;  
-                    drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos);
-                    placeFrogger(frogX, frogY);  
-                    drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
-                  //  displayBoard(); 
-                    break;                 
-                }
-
-                if (button == BUTTON_A && start == 0){
-                    clearScreen(pixel);
-                    return(0);
-                    break;
-                }
-            }
-        }
-
-        
-        if (button == BUTTON_LEFT && xPos > 0){         
-            prevFX = frogX;
-            prevFY = frogY;
-            xPos = xPos - 1;
-            frogY = frogY - 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
-            resetFrogger(prevFX, prevFY);
-            placeFrogger(frogX, frogY); 
-            // long b = 0;
-            // testPlaceCar(b, 39);
-           // displayBoard();   
-        }
-
-        if (button == BUTTON_RIGHT && xPos < 39){
-            prevFX = frogX;
-            prevFY = frogY;
-            xPos = xPos + 1;
-            frogY = frogY + 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
-            resetFrogger(prevFX, prevFY);
-            placeFrogger(frogX, frogY); 
-            // long b = 0;
-            // testPlaceCar(b, 39);
-           // displayBoard();   
-        }        
-
-
-        if (button == BUTTON_UP && yPos < 22 && yPos > 1){
-            prevFX = frogX;
-            prevFY = frogY;
-            yPos = yPos - 1;
-            frogX = frogX - 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
-            resetFrogger(prevFX, prevFY);
-            placeFrogger(frogX, frogY); 
-            // long b = 0;
-            // testPlaceCar(b, 39);
-           // displayBoard();   
-
-        }
-
-        if (button == BUTTON_DOWN && yPos >= 0 && yPos < 21){
-            prevFX = frogX;
-            prevFY = frogY;
-            yPos = yPos + 1;
-            frogX = frogX + 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
-            resetFrogger(prevFX, prevFY);
-            placeFrogger(frogX, frogY); 
-            // long b = 0;
-            // testPlaceCar(b, 39);
-           // displayBoard();   
-        }  
-
-        int pause = 0; // 0 is restart, 1 is quit
-        if (button == BUTTON_START){
-            drawRestartPause(pixel);
-            while(1){
-                unsigned int button = Read_SNES(gpioPtr);
-                if (button == BUTTON_DOWN){ // go to quit
-                    drawQuitPause(pixel);
-                    pause = 1;
-                }
-                if (button == BUTTON_UP){ // go to restart
-                    drawRestartPause(pixel);                    
-                    pause = 0;
-                }
-                if (button == BUTTON_START){ // exit menu 
-                    drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos);                     
-                    break;
-                }
-                if (button == BUTTON_A && pause == 0){  // restart position 
-                    int xPos = 20;
-                    int yPos = 21;
-                    drawGameBackground(pixel);
-                    drawFrog(pixel, xPos, yPos);
-                    break;
-                }
-                if (button == BUTTON_A && pause == 1){
-                    int xPos = 20;
-                    int yPos = 21;
-                    drawStartFrogger(pixel);
-                    startFlag = false;
-                    break;
-                }
-
-            }
-
-        }
-
-    }
-
-    /* free pixel's allocated memory */
-	free(pixel);
-	pixel = NULL;
-	munmap(framebufferstruct.fptr, framebufferstruct.screenSize);
-
+    pthread_t main_thread;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_create(&main_thread, &attr, mainRun, NULL);
+    //After main thread and threads finish
     pthread_exit(NULL);
 
-    return 0;
 }
 
 /* Draw a pixel */
@@ -418,28 +222,212 @@ void placeCar(long car, int pos){
 //**************************MAIN THREAD**********************
 void *mainRun()
     {
-        //main thread waits until all horses finish the race
-        //periodically displays the progress of each horse as an arrow
-        //main thread should boot up home/pause screen
-        g.startTime = time(NULL);
-        g.gameOver = false;
-        pthread_t carLogic[g.carNum];
+            // get gpio pointer
+    unsigned int *gpioPtr = getGPIOPtr();  
+	int latch = 0;
+    int data = 1;
+    int clock = 2;
+    //int button_combos[11] = {1, 256, 2, 512, 4, 32, 64, 128, 16, 1024, 2048};
 
-		//Start state of game 
-		long i = 1;
-        for (i = 0; i < 2; i++){
-        pthread_create(&carLogic[i], NULL, runner, (void *)i);
-        }
-	// while (!g.gameOver) {
-    //         displayBoard();
-	// 	}
+    //set GPIO pin 9 latch line to output
+    init_GPIO(gpioPtr, latch);
+
+    //set GPIO pin 10 data to input
+    init_GPIO(gpioPtr, data);
+
+    //set GPIO pin 11 clock to output
+    init_GPIO(gpioPtr, clock);
+
+    // Clear the LATCH line (GPIO 9) to low
+    clear_GPIO9(gpioPtr);
+
+    // Set CLOCK line (GPIO 11) to high
+    Write_Clock(gpioPtr);
+
+	/* initialize + get FBS */
+	framebufferstruct = initFbInfo();
 	
-  	//join threads so the main thread can gather the progress
-      long p;
-      for (p = 0; p < g.carNum; p++){
-     pthread_join(carLogic[p], NULL);
-	// pthread_join(gameDisplay, NULL); 
-    } 	
+	//short int *heartPtr=(short int *) heartImage.pixel_data;
+	// short int *bombPtr=(short int *) bombImage.pixel_data;
+	// short int *carLeftPtr=(short int *) carLeftImage.pixclerael_data;
+	//short int *frogPtr=(short int *) frogImage.pixel_data;
+	//short int *landPtr=(short int *) landImage.pixel_data;
+	// short int *lilyPadPtr=(short int *) lilyPadImage.pixel_data;
+	// short int *logPtr=(short int *) logImage.pixel_data;
+	// short int *truckRightPtr=(short int *) truckRightImage.pixel_data;
+	//short int *starPtr=(short int *) starImage.pixel_data;
+	
+	/* initialize a pixel */
+	Pixel *pixel;
+	pixel = malloc(sizeof(Pixel));
+    bool startFlag = false;
+    int xPos = 20;
+    int yPos = 21;
+    int frogX = 20;
+    int frogY = 19;
+    int prevFX;
+    int prevFY;
+    int start = 1; // 0 is quit, 1 is start
+    g.carNum = 1;
+    int score = 0;
+
+    while(1){
+        unsigned int button = Read_SNES(gpioPtr);
+       // delayMicroseconds(1500);
+
+        if (startFlag == false){
+            xPos = 20;
+            yPos = 21;
+            drawStartFrogger(pixel);
+
+            while(1){
+                g.gameOver = false;
+                    pthread_t carLogic[g.carNum];
+
+                //Start state of game 
+                long i = 1;
+                for (i = 0; i < 2; i++){
+                pthread_create(&carLogic[i], NULL, runner, (void *)i);
+                }
+                unsigned int button = Read_SNES(gpioPtr);
+                if (button == BUTTON_RIGHT){
+                    drawQuitFrogger(pixel); 
+                    start = 0;                
+                } 
+
+                if (button == BUTTON_LEFT){
+                    drawStartFrogger(pixel);
+                    start = 1;                        
+                }
+
+                if (button == BUTTON_A && start == 1){
+                    startFlag = true;  
+                    drawGameBackground(pixel);
+                    drawFrog(pixel, xPos, yPos);
+                    placeFrogger(frogX, frogY);  
+                    drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
+                  //  displayBoard(); 
+                    break;                 
+                }
+
+                if (button == BUTTON_A && start == 0){
+                    clearScreen(pixel);
+                    return(0);
+                    break;
+                }
+
+                //                //join threads so the main thread can gather the progress
+                // long p;
+                // for (p = 0; p < g.carNum; p++){
+                // pthread_join(carLogic[p], NULL);
+                // // pthread_join(gameDisplay, NULL); 
+                // } 
+            }
+        }
+
+        
+        if (button == BUTTON_LEFT && xPos > 0){         
+            prevFX = frogX;
+            prevFY = frogY;
+            xPos = xPos - 1;
+            frogY = frogY - 1;
+            drawGameBackground(pixel);
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
+        }
+
+        if (button == BUTTON_RIGHT && xPos < 39){
+            prevFX = frogX;
+            prevFY = frogY;
+            xPos = xPos + 1;
+            frogY = frogY + 1;
+            drawGameBackground(pixel);
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
+        }        
+
+
+        if (button == BUTTON_UP && yPos < 22 && yPos > 1){
+            prevFX = frogX;
+            prevFY = frogY;
+            yPos = yPos - 1;
+            frogX = frogX - 1;
+            drawGameBackground(pixel);
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
+
+        }
+
+        if (button == BUTTON_DOWN && yPos >= 0 && yPos < 21){
+            prevFX = frogX;
+            prevFY = frogY;
+            yPos = yPos + 1;
+            frogX = frogX + 1;
+            drawGameBackground(pixel);
+            drawFrog(pixel, xPos, yPos);
+            resetFrogger(prevFX, prevFY);
+            placeFrogger(frogX, frogY); 
+            // long b = 0;
+            // testPlaceCar(b, 39);
+           // displayBoard();   
+        }  
+
+        int pause = 0; // 0 is restart, 1 is quit
+        if (button == BUTTON_START){
+            drawRestartPause(pixel);
+            while(1){
+                unsigned int button = Read_SNES(gpioPtr);
+                if (button == BUTTON_DOWN){ // go to quit
+                    drawQuitPause(pixel);
+                    pause = 1;
+                }
+                if (button == BUTTON_UP){ // go to restart
+                    drawRestartPause(pixel);                    
+                    pause = 0;
+                }
+                if (button == BUTTON_START){ // exit menu 
+                    drawGameBackground(pixel);
+                    drawFrog(pixel, xPos, yPos);                     
+                    break;
+                }
+                if (button == BUTTON_A && pause == 0){  // restart position 
+                    int xPos = 20;
+                    int yPos = 21;
+                    drawGameBackground(pixel);
+                    drawFrog(pixel, xPos, yPos);
+                    break;
+                }
+                if (button == BUTTON_A && pause == 1){
+                    int xPos = 20;
+                    int yPos = 21;
+                    drawStartFrogger(pixel);
+                    startFlag = false;
+                    break;
+                }
+
+            }
+
+        }
+
+    }
+
+        /* free pixel's allocated memory */
+	free(pixel);
+	pixel = NULL;
+	munmap(framebufferstruct.fptr, framebufferstruct.screenSize);
+    return 0;	
 }
 
 void *runner (void *carID){
