@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
+#include <timeText.h>
 #include "initGPIO.h"
 #include "framebuffer.h"
 #include "bomb.h"
@@ -20,6 +22,12 @@
 #include "carleft.h"
 #include "star.h"
 #include "QuitPause.h"
+#include "LosePlayAgainGameOver.h"
+#include "LoseQuitGameOver.h"
+#include "WinPlayAgainGameOver.h"
+#include "wonQuitGameOver.h"
+#include "points.h"
+#include "frogFoot.h"
 #include "RestartPause.h"
 
 
