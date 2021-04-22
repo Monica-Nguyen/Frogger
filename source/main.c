@@ -267,7 +267,7 @@ void placeBomb(long bomb, int pos){
         g.boardArray[9][pos-1] = 8;
         b.bombX[2] = pos-1;
     }
-    displayBoard();
+     displayBoard();
 }
 
 //check collisions
@@ -378,7 +378,7 @@ void *mainRun()
                     pthread_create(&carLogic[i], NULL, runner, (void *)i);
                     } 
                     for (i = 0; i < 3; i++){
-                    pthread_create(&bombLogic[i], NULL, runner, (void *)i);
+                    pthread_create(&bombLogic[i], NULL, brunner, (void *)i);
                     } 
                     for (int num = 0; num < 3; num++){
                     drawCar(pixel, num);
