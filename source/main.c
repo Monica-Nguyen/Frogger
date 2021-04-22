@@ -79,9 +79,12 @@ void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
 void clearScreen(Pixel *pixel);
 void drawStar(Pixel *pixel);
+void drawCar(Pixel *pixel, int num);
+void drawBomb(Pixel *pixel, int num);
+void reDraw(Pixel *pixel, int xPos, int yPos);
 
 //logic functions
-void checkCollisions(int n);
+void checkCarCollisions(int n);
 void createGameArray();
 void placeFrogger(int n, int m);
 void resetFrogger(int n, int m);
@@ -90,7 +93,9 @@ void moveCarLocation();
 void displayBoard();
 void *mainRun();
 void *runner (void *carID);
+void *brunner (void *bID);
 void placeCar(long car, int pos);
+void placeBomb(long bomb, int pos);
 
 struct Game {
 	long state;				//0 - is main menu, 1 - is playing game, 2 - game is paused
@@ -110,9 +115,23 @@ struct Game {
 }; 
 struct Game g;
 
+struct Bomb {
+    int bombX[3];
+    int bombY[3];
+    int progress[3];
+}; 
+struct Bomb b;
+
+struct Car {
+    int carX[3];
+    int carY[3];
+    int progress[3];
+}; 
+struct Car c;
 
 int main()
 {
+    g.lives = 4;
     pthread_t main_thread;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -179,15 +198,20 @@ void resetFrogger(int n, int m){
 
 void testPlaceCar(long car, int pos){
      if (car == 0){
+        int delay = rand()%3;
+        sleep(delay);
         g.boardArray[18][pos] = 3;
+        c.carX[0] = pos-1;
     }
 
     if (car == 1){
         g.boardArray[19][pos] = 3;
+        c.carX[1] = pos-1;
     }
 
     if (car == 2){
         g.boardArray[20][pos] = 3;
+        c.carX[2] = pos-1;
     }
     
 }
@@ -195,30 +219,75 @@ void testPlaceCar(long car, int pos){
 void placeCar(long car, int pos){
     if (car == 0){
            if (pos < 40){
-                g.boardArray[18][pos] = 0;
+                g.boardArray[17][pos] = 0;
             }
-        g.boardArray[18][pos-1] = 3;
+        g.boardArray[17][pos-1] = 3;
+        c.carX[0] = pos-1;
     }
 
     if (car == 1){
            if (pos < 40){
-                g.boardArray[19][pos] = 0;
+                g.boardArray[18][pos] = 0;
             }
-        g.boardArray[19][pos-1] = 3;
+        g.boardArray[18][pos-1] = 3;
+        c.carX[1] = pos-1;
     }
 
     if (car == 2){
            if (pos < 40){
-                g.boardArray[20][pos] = 0;
+                g.boardArray[19][pos] = 0;
             }
-        g.boardArray[20][pos-1] = 3;
+        g.boardArray[19][pos-1] = 3;
+        c.carX[2] = pos-1;
     }
-    
- 
+    //displayBoard();
+}
 
+void placeBomb(long bomb, int pos){
+    if (bomb == 0){
+           if (pos < 40){
+                g.boardArray[7][pos] = 0;
+            }
+        g.boardArray[7][pos-1] = 8;
+        b.bombX[0] = pos-1;
+    }
+
+    if (bomb == 1){
+           if (pos < 40){
+                g.boardArray[8][pos] = 0;
+            }
+        g.boardArray[8][pos-1] = 8;
+        b.bombX[1] = pos-1;
+    }
+
+    if (bomb == 2){
+           if (pos < 40){
+                g.boardArray[9][pos] = 0;
+            }
+        g.boardArray[9][pos-1] = 8;
+        b.bombX[2] = pos-1;
+    }
     displayBoard();
 }
 
+//check collisions
+void checkCarCollisions(int n){
+ if ((g.boardArray[17][n-1] == 5) || (g.boardArray[18][n-1] == 5) ||  (g.boardArray[19][n-1] == 5) || (g.boardArray[7][n-1] == 5) || (g.boardArray[8][n-1] == 5) ||  (g.boardArray[9][n-1] == 5)){
+	 	g.lives--;
+        printf("\n You have decreased a life\n");
+        printf("\n Lives Remaining: %d\n", g.lives);
+        
+ }
+}
+
+//check collisions
+void checkFroggerCollisions(int n, int m){
+ if (!(g.boardArray[n][m]==0)){
+	 	g.lives--;
+        printf("\n You have decreased a life\n");
+        printf("\n Lives Remaining: %d\n", g.lives);
+ }
+}
 //**************************MAIN THREAD**********************
 void *mainRun()
     {
@@ -268,7 +337,7 @@ void *mainRun()
     int prevFX;
     int prevFY;
     int start = 1; // 0 is quit, 1 is start
-    g.carNum = 1;
+    g.carNum = 3;
     int score = 0;
 
     while(1){
@@ -281,14 +350,6 @@ void *mainRun()
             drawStartFrogger(pixel);
 
             while(1){
-                g.gameOver = false;
-                    pthread_t carLogic[g.carNum];
-
-                //Start state of game 
-                long i = 1;
-                for (i = 0; i < 2; i++){
-                pthread_create(&carLogic[i], NULL, runner, (void *)i);
-                }
                 unsigned int button = Read_SNES(gpioPtr);
                 if (button == BUTTON_RIGHT){
                     drawQuitFrogger(pixel); 
@@ -306,7 +367,28 @@ void *mainRun()
                     drawFrog(pixel, xPos, yPos);
                     placeFrogger(frogX, frogY);  
                     drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
-                  //  displayBoard(); 
+                  //  displayBoard();
+                    g.gameOver = false;
+                    pthread_t carLogic[g.carNum];
+                    pthread_t bombLogic[3];
+
+                    //Start state of game 
+                    long i = 1;
+                    for (i = 0; i < 3; i++){
+                    pthread_create(&carLogic[i], NULL, runner, (void *)i);
+                    } 
+                    for (i = 0; i < 3; i++){
+                    pthread_create(&bombLogic[i], NULL, runner, (void *)i);
+                    } 
+                    for (int num = 0; num < 3; num++){
+                    drawCar(pixel, num);
+                    drawBomb(pixel, num);
+                    }
+                    // for (int num = 0; num < 3; num++){
+                    //drawCar(pixel, 0);  
+                   // drawCar(pixel, 1);
+                   // drawCar(pixel, 2);
+                    // }
                     break;                 
                 }
 
@@ -324,16 +406,18 @@ void *mainRun()
                 // } 
             }
         }
-
-        
+       
         if (button == BUTTON_LEFT && xPos > 0){         
             prevFX = frogX;
             prevFY = frogY;
             xPos = xPos - 1;
             frogY = frogY - 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
+            //  drawGameBackground(pixel);
+            //  drawFrog(pixel, xPos, yPos);
+            //  drawCar(pixel);
+            reDraw(pixel, xPos, yPos);  
             resetFrogger(prevFX, prevFY);
+            checkFroggerCollisions(frogX, frogY);
             placeFrogger(frogX, frogY); 
             // long b = 0;
             // testPlaceCar(b, 39);
@@ -345,9 +429,12 @@ void *mainRun()
             prevFY = frogY;
             xPos = xPos + 1;
             frogY = frogY + 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
+            //  drawGameBackground(pixel);
+            //  drawFrog(pixel, xPos, yPos);
+            //  drawCar(pixel);
+            reDraw(pixel, xPos, yPos);  
             resetFrogger(prevFX, prevFY);
+            checkFroggerCollisions(frogX, frogY);
             placeFrogger(frogX, frogY); 
             // long b = 0;
             // testPlaceCar(b, 39);
@@ -360,9 +447,12 @@ void *mainRun()
             prevFY = frogY;
             yPos = yPos - 1;
             frogX = frogX - 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
+            //  drawGameBackground(pixel);
+            //  drawFrog(pixel, xPos, yPos);
+            //  drawCar(pixel);
+            reDraw(pixel, xPos, yPos);  
             resetFrogger(prevFX, prevFY);
+            checkFroggerCollisions(frogX, frogY);
             placeFrogger(frogX, frogY); 
             // long b = 0;
             // testPlaceCar(b, 39);
@@ -375,14 +465,20 @@ void *mainRun()
             prevFY = frogY;
             yPos = yPos + 1;
             frogX = frogX + 1;
-            drawGameBackground(pixel);
-            drawFrog(pixel, xPos, yPos);
+            //  drawGameBackground(pixel);
+            //  drawFrog(pixel, xPos, yPos);
+            //  drawCar(pixel);
+            reDraw(pixel, xPos, yPos);  
             resetFrogger(prevFX, prevFY);
+            checkFroggerCollisions(frogX, frogY);
             placeFrogger(frogX, frogY); 
             // long b = 0;
             // testPlaceCar(b, 39);
            // displayBoard();   
-        }  
+        }
+        
+        // sleep(1);
+         reDraw(pixel, xPos, yPos);  
 
         int pause = 0; // 0 is restart, 1 is quit
         if (button == BUTTON_START){
@@ -431,16 +527,63 @@ void *mainRun()
 }
 
 void *runner (void *carID){
+    //.carX = 39;
+    c.carY[0] = 18;
+    c.carY[1] = 19;
+    c.carY[2] = 20;
+    Pixel *cpixel;
+	cpixel = malloc(sizeof(Pixel));
     int i;
     long h = (long) carID;
     for (i = 40; i > 0; i--){
         g.car[h]= i;
-        sleep(2);
+        //sleep(1);
+        checkCarCollisions(i);
         placeCar(h, i);
+        sleep(2);
+        //c.carX = i-1;
+        //drawCar(cpixel, r);
+       // drawGameBackground(cpixel);
     }
+    free(cpixel);
+	cpixel = NULL;
+}
+
+void *brunner (void *bID){
+    //.carX = 39;
+    b.bombY[0] = 8;
+    b.bombY[1] = 9;
+    b.bombY[2] = 10;
+    Pixel *bpixel;
+	bpixel = malloc(sizeof(Pixel));
+    int i;
+    long h = (long) bID;
+    for (i = 40; i > 0; i--){
+        //g.car[h]= i;
+        //sleep(1);
+        checkCarCollisions(i);
+        placeBomb(h, i);
+        sleep(2);
+        //c.carX = i-1;
+        //drawCar(cpixel, r);
+       // drawGameBackground(cpixel);
+    }
+    free(bpixel);
+	bpixel = NULL;
 }
 
 
+void reDraw(Pixel *pixel, int xPos, int yPos){
+        drawGameBackground(pixel);
+        drawFrog(pixel, xPos, yPos);
+        for (int num = 0; num < 3; num++){
+            drawCar(pixel, num);
+            drawBomb(pixel, num);
+        }
+        //drawCar(pixel, 0);  
+        //drawCar(pixel, 1);
+        //drawCar(pixel, 2);
+}
 
 //**************************INITGPIO************************
 //Funcion which initializes a GPIO line. The function is general for lines 9, 10 and 11
@@ -813,4 +956,113 @@ void drawStar(Pixel *pixel){
 		}
 
 	}
+
+}
+
+void drawCar(Pixel *pixel, int num){ 
+	short int *carPtr=(short int *) carLeftImage.pixel_data;
+     int i=0;
+    
+    if (num == 0){
+    for (int y = c.carY[0] * 32 - 32; y < c.carY[0] * 32; y++) // height
+    {
+        for (int x = c.carX[0] * 32; x < 32 + c.carX[0] * 32; x++) //width
+        {
+                pixel->color = carPtr[i];
+                pixel->x = x;
+                pixel->y = y;
+
+                drawPixel(pixel);
+                i++;
+        }
+
+	}
+    }
+
+    if (num == 1){
+        for (int y = c.carY[1] * 32 - 32; y < c.carY[1] * 32; y++) // height
+        {
+            for (int x = c.carX[1] * 32; x < 32 + c.carX[1] * 32; x++) //width
+            {
+                    pixel->color = carPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 2){
+        for (int y = c.carY[2] * 32 - 32; y < c.carY[2] * 32; y++) // height
+        {
+            for (int x = c.carX[2] * 32; x < 32 + c.carX[2] * 32; x++) //width
+            {
+                    pixel->color = carPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+ 
+}
+
+void drawBomb(Pixel *pixel, int num){ 
+	short int *bombPtr=(short int *) bombImage.pixel_data;
+     int i=0;
+    
+    if (num == 0){
+    for (int y = b.bombY[0] * 32 - 32; y < b.bombY[0] * 32; y++) // height
+    {
+        for (int x = b.bombX[0] * 32; x < 32 + b.bombX[0] * 32; x++) //width
+        {
+                pixel->color = bombPtr[i];
+                pixel->x = x;
+                pixel->y = y;
+
+                drawPixel(pixel);
+                i++;
+        }
+
+	}
+    }
+
+    if (num == 1){
+        for (int y = b.bombY[1] * 32 - 32; y < b.bombY[1] * 32; y++) // height
+        {
+            for (int x = b.bombX[1] * 32; x < 32 + b.bombX[1] * 32; x++) //width
+            {
+                    pixel->color = bombPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 2){
+        for (int y = b.bombY[2] * 32 - 32; y < b.bombY[2] * 32; y++) // height
+        {
+            for (int x = b.bombX[2] * 32; x < 32 + b.bombX[2] * 32; x++) //width
+            {
+                    pixel->color = bombPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+ 
 }
