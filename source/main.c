@@ -85,6 +85,7 @@ void reDraw(Pixel *pixel, int xPos, int yPos);
 
 //logic functions
 void checkCarCollisions(int n);
+void checkBombCollisions(int n);
 void createGameArray();
 void placeFrogger(int n, int m);
 void resetFrogger(int n, int m);
@@ -272,11 +273,20 @@ void placeBomb(long bomb, int pos){
 
 //check collisions
 void checkCarCollisions(int n){
- if ((g.boardArray[17][n-1] == 5) || (g.boardArray[18][n-1] == 5) ||  (g.boardArray[19][n-1] == 5) || (g.boardArray[7][n-1] == 5) || (g.boardArray[8][n-1] == 5) ||  (g.boardArray[9][n-1] == 5)){
+ if ((g.boardArray[17][n-1] == 5) || (g.boardArray[18][n-1] == 5) ||  (g.boardArray[19][n-1] == 5)){
 	 	g.lives--;
         printf("\n You have decreased a life\n");
         printf("\n Lives Remaining: %d\n", g.lives);
         
+ }
+}
+
+//check collisions
+void checkBombCollisions(int n){
+ if ((g.boardArray[7][n-1] == 5) || (g.boardArray[8][n-1] == 5) ||  (g.boardArray[9][n-1] == 5)){
+	 	g.lives--;
+        printf("\n You have decreased a life\n");
+        printf("\n Lives Remaining: %d\n", g.lives);
  }
 }
 
@@ -561,7 +571,7 @@ void *brunner (void *bID){
     for (i = 40; i > 0; i--){
         //g.car[h]= i;
         //sleep(1);
-        checkCarCollisions(i);
+        checkBombCollisions(i);
         placeBomb(h, i);
         sleep(2);
         //c.carX = i-1;
