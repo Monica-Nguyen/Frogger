@@ -156,26 +156,26 @@ int main()
         }
 
         
-        if (button == BUTTON_LEFT && xPos != 0){         
+        if (button == BUTTON_LEFT && xPos > 0){         
             xPos = xPos - 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
         }
 
-        if (button == BUTTON_RIGHT && xPos < 40){
+        if (button == BUTTON_RIGHT && xPos < 39){
             xPos = xPos + 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
         }        
 
-        if (button == BUTTON_UP && yPos != 22){
+        if (button == BUTTON_UP && yPos < 22){
             yPos = yPos - 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
 
         }
 
-        if (button == BUTTON_DOWN && yPos != 0){
+        if (button == BUTTON_DOWN && yPos > 0){
             yPos = yPos + 1;
             drawGameBackground(pixel);
             drawFrog(pixel, xPos, yPos); 
