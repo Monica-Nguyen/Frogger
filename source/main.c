@@ -87,6 +87,7 @@ void reDraw(Pixel *pixel, int xPos, int yPos);
 void checkCarCollisions(int n);
 void checkBombCollisions(int n);
 void checkPadCollisions(int n);
+void checkLogCollisions(int n);
 void createGameArray();
 void placeFrogger(int n, int m);
 void resetFrogger(int n, int m);
@@ -484,26 +485,26 @@ void *mainRun()
                     long i = 1;
                     for (i = 0; i < 3; i++){
                     pthread_create(&carLogic[i], NULL, runner, (void *)i);
-                    int delay = rand()%3;
-                    sleep(delay);
+                    // int delay = rand()%3;
+                    // sleep(delay);
                     } 
 
                     for (i = 0; i < 3; i++){
                     pthread_create(&bombLogic[i], NULL, brunner, (void *)i);
-                    int delay = rand()%3;
-                    sleep(delay);
+                    // int delay = rand()%3;
+                    // sleep(delay);
                     } 
 
                     for (i = 0; i < 4; i++){
                     pthread_create(&padLogic[i], NULL, prunner, (void *)i);
-                    int delay = rand()%3;
-                    sleep(delay);
+                    // int delay = rand()%3;
+                    // sleep(delay);
                     } 
 
                     for (i = 0; i < 4; i++){
                     pthread_create(&logLogic[i], NULL, lrunner, (void *)i);
-                    int delay = rand()%3;
-                    sleep(delay);
+                    // int delay = rand()%3;
+                    // sleep(delay);
                     } 
 
                     for (int num = 0; num < 3; num++){
