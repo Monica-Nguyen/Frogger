@@ -120,6 +120,7 @@ int main()
     int xPos = 20;
     int yPos = 21;
     int start = 1; // 0 is quit, 1 is start
+    int score = 0;
     
     while(1){
         unsigned int button = Read_SNES(gpioPtr);
