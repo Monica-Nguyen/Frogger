@@ -6,7 +6,6 @@
 #include <sys/mman.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <time.h>
 #include <math.h>
 #include "initGPIO.h"
 #include "framebuffer.h"
@@ -22,8 +21,7 @@
 #include "star.h"
 #include "QuitPause.h"
 #include "RestartPause.h"
-#include "PlayAgainGameOver.h"
-#include "QuitGameOver.h"
+
 
 void init_GPIO(unsigned int* gpioPtr, int code);
 void clear_GPIO9(unsigned int* gpioPtr);
@@ -81,11 +79,14 @@ void clearScreen(Pixel *pixel);
 void drawStar(Pixel *pixel);
 void drawCar(Pixel *pixel, int num);
 void drawBomb(Pixel *pixel, int num);
+void drawPad(Pixel *pixel, int num);
+void drawLog(Pixel *pixel, int num);
 void reDraw(Pixel *pixel, int xPos, int yPos);
 
 //logic functions
 void checkCarCollisions(int n);
 void checkBombCollisions(int n);
+void checkPadCollisions(int n);
 void createGameArray();
 void placeFrogger(int n, int m);
 void resetFrogger(int n, int m);
@@ -95,8 +96,12 @@ void displayBoard();
 void *mainRun();
 void *runner (void *carID);
 void *brunner (void *bID);
+void *prunner (void *pID);
+void *lrunner (void *lID);
 void placeCar(long car, int pos);
 void placeBomb(long bomb, int pos);
+void placePad(long pad, int pos);
+void placeLog(long log, int pos);
 
 struct Game {
 	long state;				//0 - is main menu, 1 - is playing game, 2 - game is paused
@@ -129,6 +134,20 @@ struct Car {
     int progress[3];
 }; 
 struct Car c;
+
+struct Pad {
+    int padX[4];
+    int padY[4];
+    int progress[4];
+}; 
+struct Pad p;
+
+struct Log {
+    int logX[4];
+    int logY[4];
+    int progress[4];
+}; 
+struct Log l;
 
 int main()
 {
@@ -199,8 +218,6 @@ void resetFrogger(int n, int m){
 
 void testPlaceCar(long car, int pos){
      if (car == 0){
-        int delay = rand()%3;
-        sleep(delay);
         g.boardArray[18][pos] = 3;
         c.carX[0] = pos-1;
     }
@@ -267,6 +284,78 @@ void placeBomb(long bomb, int pos){
             }
         g.boardArray[9][pos-1] = 8;
         b.bombX[2] = pos-1;
+    }
+     //displayBoard();
+}
+
+void placePad(long pad, int pos){
+       
+    if (pad == 0){
+           if (pos > 0){
+                g.boardArray[11][pos-1] = 0;
+            }
+        g.boardArray[11][pos] = 7;
+        p.padX[0] = pos;
+    }
+
+    if (pad == 1){
+           if (pos > 0){
+                g.boardArray[12][pos-1] = 0;
+            }
+        g.boardArray[12][pos] = 7;
+        p.padX[1] = pos;
+    }
+
+    if (pad == 2){
+           if (pos > 0){
+                g.boardArray[13][pos-1] = 0;
+            }
+        g.boardArray[13][pos] = 7;
+        p.padX[2] = pos;
+    }
+
+    if (pad == 3){
+           if (pos > 0){
+                g.boardArray[14][pos-1] = 0;
+            }
+        g.boardArray[14][pos] = 7;
+        p.padX[3] = pos;
+    }
+     //displayBoard();
+}
+
+void placeLog(long log, int pos){
+       
+    if (log == 0){
+           if (pos > 0){
+                g.boardArray[1][pos-1] = 0;
+            }
+        g.boardArray[1][pos] = 4;
+        l.logX[0] = pos;
+    }
+
+    if (log == 1){
+           if (pos > 0){
+                g.boardArray[2][pos-1] = 0;
+            }
+        g.boardArray[2][pos] = 4;
+        l.logX[1] = pos;
+    }
+
+    if (log == 2){
+           if (pos > 0){
+                g.boardArray[3][pos-1] = 0;
+            }
+        g.boardArray[3][pos] = 4;
+        l.logX[2] = pos;
+    }
+
+    if (log == 3){
+           if (pos > 0){
+                g.boardArray[4][pos-1] = 0;
+            }
+        g.boardArray[4][pos] = 4;
+        l.logX[3] = pos;
     }
      displayBoard();
 }
@@ -371,6 +460,14 @@ void *mainRun()
                     start = 1;                        
                 }
 
+                
+
+                if (button == BUTTON_A && start == 0){
+                    clearScreen(pixel);
+                    return(0);
+                    break;
+                }
+
                 if (button == BUTTON_A && start == 1){
                     startFlag = true;  
                     drawGameBackground(pixel);
@@ -381,31 +478,71 @@ void *mainRun()
                     g.gameOver = false;
                     pthread_t carLogic[g.carNum];
                     pthread_t bombLogic[3];
+                    pthread_t padLogic[4];
+                    pthread_t logLogic[4];
 
+                    long i = 1;
+                    for (i = 0; i < 3; i++){
+                    pthread_create(&carLogic[i], NULL, runner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
+                    } 
+
+                    for (i = 0; i < 3; i++){
+                    pthread_create(&bombLogic[i], NULL, brunner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
+                    } 
+
+                    for (i = 0; i < 4; i++){
+                    pthread_create(&padLogic[i], NULL, prunner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
+                    } 
+
+                    for (i = 0; i < 4; i++){
+                    pthread_create(&logLogic[i], NULL, lrunner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
+                    } 
+
+                    for (int num = 0; num < 3; num++){
+                    drawCar(pixel, num);
+                    drawBomb(pixel, num);
+                    }
+
+                    for (int num = 0; num < 4; num++){
+                    drawPad(pixel, num);
+                    drawLog(pixel, num);
+                     }
+
+/*
+                for (int rounds = 0; rounds < 5; rounds++){
                     //Start state of game 
                     long i = 1;
                     for (i = 0; i < 3; i++){
                     pthread_create(&carLogic[i], NULL, runner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
                     } 
                     for (i = 0; i < 3; i++){
                     pthread_create(&bombLogic[i], NULL, brunner, (void *)i);
+                    int delay = rand()%3;
+                    sleep(delay);
                     } 
                     for (int num = 0; num < 3; num++){
                     drawCar(pixel, num);
                     drawBomb(pixel, num);
                     }
+                    rounds++;
+                }
                     // for (int num = 0; num < 3; num++){
                     //drawCar(pixel, 0);  
                    // drawCar(pixel, 1);
                    // drawCar(pixel, 2);
-                    // }
+                    // } 
+    */
                     break;                 
-                }
-
-                if (button == BUTTON_A && start == 0){
-                    clearScreen(pixel);
-                    return(0);
-                    break;
                 }
 
                 //                //join threads so the main thread can gather the progress
@@ -582,14 +719,64 @@ void *brunner (void *bID){
 	bpixel = NULL;
 }
 
+void *prunner (void *pID){
+    //.carX = 39;
+    p.padY[0] = 12;
+    p.padY[1] = 13;
+    p.padY[2] = 14;
+    p.padY[3] = 15;
+    Pixel *ppixel;
+	ppixel = malloc(sizeof(Pixel));
+    int i;
+    long h = (long) pID;
+    for (i = 0; i < 40; i++){
+        //g.car[h]= i;
+        //sleep(1);
+        placePad(h, i);
+        sleep(2);
+        //c.carX = i-1;
+        //drawCar(cpixel, r);
+       // drawGameBackground(cpixel);
+    }
+    free(ppixel);
+	ppixel = NULL;
+}
+
+void *lrunner (void *lID){
+    //.carX = 39;
+    l.logY[0] = 2;
+    l.logY[1] = 3;
+    l.logY[2] = 4;
+    l.logY[3] = 5;
+    Pixel *lpixel;
+	lpixel = malloc(sizeof(Pixel));
+    int i;
+    long h = (long) lID;
+    for (i = 0; i < 40; i++){
+        //g.car[h]= i;
+        //sleep(1);
+        placeLog(h, i);
+        sleep(2);
+        //c.carX = i-1;
+        //drawCar(cpixel, r);
+       // drawGameBackground(cpixel);
+    }
+    free(lpixel);
+	lpixel = NULL;
+}
+
 
 void reDraw(Pixel *pixel, int xPos, int yPos){
         drawGameBackground(pixel);
-        drawFrog(pixel, xPos, yPos);
         for (int num = 0; num < 3; num++){
             drawCar(pixel, num);
             drawBomb(pixel, num);
         }
+        for (int num = 0; num < 4; num++){
+            drawPad(pixel, num);
+            drawLog(pixel, num);
+        }
+        drawFrog(pixel, xPos, yPos);
         //drawCar(pixel, 0);  
         //drawCar(pixel, 1);
         //drawCar(pixel, 2);
@@ -1065,6 +1252,146 @@ void drawBomb(Pixel *pixel, int num){
             for (int x = b.bombX[2] * 32; x < 32 + b.bombX[2] * 32; x++) //width
             {
                     pixel->color = bombPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+ 
+}
+
+void drawPad(Pixel *pixel, int num){ 
+	short int *padPtr=(short int *) lilyPadImage.pixel_data;
+     int i=0;
+    
+    if (num == 0){
+    for (int y = p.padY[0] * 32 - 32; y < p.padY[0] * 32; y++) // height
+    {
+        for (int x = p.padX[0] * 32; x < 32 + p.padX[0] * 32; x++) //width
+        {
+                pixel->color = padPtr[i];
+                pixel->x = x;
+                pixel->y = y;
+
+                drawPixel(pixel);
+                i++;
+        }
+
+	}
+    }
+
+    if (num == 1){
+        for (int y = p.padY[1] * 32 - 32; y < p.padY[1] * 32; y++) // height
+        {
+            for (int x = p.padX[1] * 32; x < 32 + p.padX[1] * 32; x++) //width
+            {
+                    pixel->color = padPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 2){
+        for (int y = p.padY[2] * 32 - 32; y < p.padY[2] * 32; y++) // height
+        {
+            for (int x = p.padX[2] * 32; x < 32 + p.padX[2] * 32; x++) //width
+            {
+                    pixel->color = padPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 3){
+        for (int y = p.padY[3] * 32 - 32; y < p.padY[3] * 32; y++) // height
+        {
+            for (int x = p.padX[3] * 32; x < 32 + p.padX[3] * 32; x++) //width
+            {
+                    pixel->color = padPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+ 
+}
+
+void drawLog(Pixel *pixel, int num){ 
+	short int *logPtr=(short int *) logImage.pixel_data;
+     int i=0;
+    
+    if (num == 0){
+    for (int y = l.logY[0] * 32 - 32; y < l.logY[0] * 32; y++) // height
+    {
+        for (int x = l.logX[0] * 32; x < 32 + l.logX[0] * 32; x++) //width
+        {
+                pixel->color = logPtr[i];
+                pixel->x = x;
+                pixel->y = y;
+
+                drawPixel(pixel);
+                i++;
+        }
+
+	}
+    }
+
+    if (num == 1){
+        for (int y = l.logY[1] * 32 - 32; y < l.logY[1] * 32; y++) // height
+        {
+            for (int x = l.logX[1] * 32; x < 32 + l.logX[1] * 32; x++) //width
+            {
+                    pixel->color = logPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 2){
+        for (int y = l.logY[2] * 32 - 32; y < l.logY[2] * 32; y++) // height
+        {
+            for (int x = l.logX[2] * 32; x < 32 + l.logX[2] * 32; x++) //width
+            {
+                    pixel->color = logPtr[i];
+                    pixel->x = x;
+                    pixel->y = y;
+
+                    drawPixel(pixel);
+                    i++;
+            }
+
+        }
+        }
+
+    if (num == 3){
+        for (int y = l.logY[3] * 32 - 32; y < l.logY[3] * 32; y++) // height
+        {
+            for (int x = l.logX[3] * 32; x < 32 +l.logX[3] * 32; x++) //width
+            {
+                    pixel->color = logPtr[i];
                     pixel->x = x;
                     pixel->y = y;
 
