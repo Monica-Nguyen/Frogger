@@ -78,7 +78,7 @@ void drawFrog(Pixel *pixel, int xPos, int yPos);
 void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
 void clearScreen(Pixel *pixel);
-void drawStar(Pixel *pixel, int starX, int starY);
+void drawStar(Pixel *pixel);
 
 //logic functions
 void checkCollisions(int n);
@@ -197,6 +197,7 @@ int main()
                     drawGameBackground(pixel);
                     drawFrog(pixel, xPos, yPos);
                     placeFrogger(frogX, frogY);  
+                    drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
                   //  displayBoard(); 
                     break;                 
                 }
@@ -738,31 +739,6 @@ void drawGameBackground(Pixel *pixel){
 			}
 
 		}
-        
-        srand(time(NULL));
-        int starY;
-        int starX;
-        
-        if (channel == 0){
-            starY = rand() % 15;
-            starY = starY / 4 + 17;
-            starX = rand() % 39;
-            drawStar(pixel, starX, starY);
-        }
-
-        else if (channel == 0){
-            
-        }
-
-        else if (channel == 2){
-
-        }
-        
-        else {
-
-        }
-
-        drawStar(pixel, starX, starY);
 
 		channel = channel + 1;
 	}
@@ -829,8 +805,11 @@ void drawRestartPause(Pixel *pixel){
 	}
 }
 
-void drawStar(Pixel *pixel, int starX, int starY){
+void drawStar(Pixel *pixel){
 	short int *starPtr=(short int *) starImage.pixel_data;
+
+    int starY = rand() % 21 + 1;
+    int starX = rand() % 39;
 
     int i=0;
 	for (int y = starY * 32 - 32; y < starY * 32; y++) // height
