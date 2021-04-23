@@ -74,7 +74,7 @@ void drawFrog(Pixel *pixel);
 void drawQuitPause(Pixel *pixel);
 void drawRestartPause(Pixel *pixel);
 void clearScreen(Pixel *pixel);
-void drawStar(Pixel *pixel);
+void *drawStar(void *idk);
 void drawCar(Pixel *pixel, int num);
 void drawBomb(Pixel *pixel, int num);
 void drawPad(Pixel *pixel, int num);
@@ -119,6 +119,8 @@ struct Game {
 	int boardArray[21][40];
     int carNum;
     int car[3];
+    int starX;
+    int starY;
 }; 
 struct Game g;
 
@@ -159,10 +161,7 @@ struct frog f;
 //Main Function will start the main thread
 int main()
 {
-    g.lives = 4;
-    g.moves = 92; // the frog foot will gradually get covered up by another pixel for every 2 moves 
-    g.score = 0;
-    g.timeremaining = 120; // 120 seconds
+
     pthread_t main_thread;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -207,13 +206,35 @@ void *mainRun()
     bool startFlag = false;
     f.xPos = 20;
     f.yPos = 21;
+    g.lose = false;
+    g.win = false;
+    g.lives = 4;
+    g.moves = 92; // the frog foot will gradually get covered up by another pixel for every 2 moves 
+    g.score = 0;
+    g.starY = rand() % 21 + 1;
+    g.starX = rand() % 39;    
+    g.timeremaining = 120; // 120 seconds    
     int frogX = 20;
     int frogY = 20;
     int prevFX;
     int prevFY;
     int start = 1; // 0 is quit, 1 is start
     g.carNum = 3;
-    int score = 0;
+
+        //START OF THREADING
+    g.gameOver = false;
+    //declare the car threads
+    pthread_t carLogic[g.carNum];
+    //declare the bomb threads
+    pthread_t bombLogic[3];
+    //declare the pad threads
+    pthread_t padLogic[4];
+    //declare the log threads
+    pthread_t logLogic[4];
+    pthread_t drawingStar;
+
+    //Thread to start a timer 
+    pthread_t timeRemaining;
 
     //while loop to gather user input, decide start/stop state
     while(1){
@@ -223,6 +244,13 @@ void *mainRun()
             //default position of the frog
             f.xPos = 20;
             f.yPos = 21;
+            g.lose = false;
+            g.win = false;
+            g.lives = 4;
+            g.moves = 92; // the frog foot will gradually get covered up by another pixel for every 2 moves 
+            g.score = 0;
+            g.timeremaining = 120; // 120 seconds              
+            
             //starting position of the frog
             drawStartFrogger(pixel);
             //this loop will gather user input
@@ -250,22 +278,12 @@ void *mainRun()
                     drawGameBackground(pixel);
                     drawFrog(pixel);
                     placeFrogger(frogX, frogY);
-                    //displayBoard();
-                    drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
+                    // //displayBoard();
+                    // drawStar(pixel); // START A THREAD HERE AND MAKE IT SLEEP 30s
 
-                    //START OF THREADING
-                    g.gameOver = false;
-                    //declare the car threads
-                    pthread_t carLogic[g.carNum];
-                    //declare the bomb threads
-                    pthread_t bombLogic[3];
-                    //declare the pad threads
-                    pthread_t padLogic[4];
-                    //declare the log threads
-                    pthread_t logLogic[4];
+                    int idk;
+                    pthread_create(&drawingStar, NULL, drawStar, (void *)idk);
 
-                    //Thread to start a timer 
-                    pthread_t timeRemaining;
                     int garbage;
                     pthread_create(&timeRemaining, NULL, timeTicking, (void *)garbage);
 
@@ -323,19 +341,13 @@ void *mainRun()
             if(f.yPos > 11 && f.yPos < 16){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel); 
-                    placeFrogger(20,20);
+
                 }
             }
             if(f.yPos > 1 && f.yPos < 6){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel); 
-                    placeFrogger(20,20);
+
                 }
             }            
             //redraw all components
@@ -361,19 +373,13 @@ void *mainRun()
             if(f.yPos > 11 && f.yPos < 16){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                    
+                   
                 }
             }
             if(f.yPos > 1 && f.yPos < 6){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                    
+                 
                 }
             }                    
             //redraw all components
@@ -397,19 +403,13 @@ void *mainRun()
             if(f.yPos > 11 && f.yPos < 16){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                       
+                     
                 }
             }
             if(f.yPos > 1 && f.yPos < 6){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                       
+                     
                 }
             }
             //redraw all components
@@ -433,19 +433,13 @@ void *mainRun()
             if(f.yPos > 11 && f.yPos < 16){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                       
+                     
                 }
             }
             if(f.yPos > 1 && f.yPos < 6){
                 if (g.boardArray[frogX][frogY] == 0){
                     g.lives = g.lives - 1;
-                    f.xPos = 20;
-                    f.yPos = 21;
-                    reDraw(pixel);                     
-                    placeFrogger(20,20);                       
+                    
                 }
             }                   
             //redraw all components
@@ -487,6 +481,11 @@ void *mainRun()
                 if (button == BUTTON_A && pause == 1){
                     f.xPos = 20;
                     f.yPos = 21;
+                    pthread_cancel(carLogic);
+                    pthread_cancel(bombLogic);
+                    pthread_cancel(logLogic);
+                    pthread_cancel(padLogic);
+                    pthread_cancel(timeRemaining);                           
                     drawStartFrogger(pixel);
                     startFlag = false;
                     break;
@@ -496,34 +495,120 @@ void *mainRun()
 
         }
 
+        //This is to determine the wins and losses 
         if (g.lives == 0 || g.timeremaining == 0 || g.moves == 0) {
+            pthread_cancel(carLogic);
+            pthread_cancel(bombLogic);
+            pthread_cancel(logLogic);
+            pthread_cancel(padLogic);
+            pthread_cancel(timeRemaining);                
             g.lose = true;
         }
 
         if (f.yPos == 0){
+            pthread_cancel(carLogic);
+            pthread_cancel(bombLogic);
+            pthread_cancel(logLogic);
+            pthread_cancel(padLogic);
+            pthread_cancel(timeRemaining);    
             g.win = true;
         }
 
         if (g.lose == true){
+            short int *gameoverlostPtr=(short int *) gameoverlostImage.pixel_data;
+            
+            //draw game over lost message 
+            int i=0;
+            for (int y = 0; y < 720; y++) // height
+            {
+                for (int x = 0; x < 1280; x++) //width
+                {	
+                        pixel->color = gameoverlostPtr[i];
+                        pixel->x = x;
+                        pixel->y = y;
+            
+                        drawPixel(pixel);
+                        i++;		
+                }
+
+            }
+
+            while(1){
+                //draw game over lost message 
+                int i=0;
+                for (int y = 0; y < 720; y++) // height
+                {
+                    for (int x = 0; x < 1280; x++) //width
+                    {	
+                            pixel->color = gameoverlostPtr[i];
+                            pixel->x = x;
+                            pixel->y = y;
+                
+                            drawPixel(pixel);
+                            i++;		
+                    }
+
+                }
+
+                //hit any button to continue 
+                if (button == BUTTON_A || button == BUTTON_B || button == BUTTON_L || button == BUTTON_LEFT || button == BUTTON_R || button == BUTTON_RIGHT || button == BUTTON_SEL || button == BUTTON_START || button == BUTTON_UP || button == BUTTON_Y || button == BUTTON_X){                  
+                    drawStartFrogger(pixel);
+                    startFlag = false;
+                    g.lose = false;
+                    break;                    
+
+                }
+
+
+            }
 
         }
-        
-        // pthread_cancel(carLogic);
-        // pthread_cancel(bombLogic);
-        // pthread_cancel(logLogic);
-        // pthread_cancel(padLogic);
-        // pthread_cancel(timeRemaining);
-        // pthread_cancel(stars);
 
+        // if the user wins display the message and allow escape based on any button input
+        if (g.win == true){
+            short int *gameoverwinPtr=(short int *) gameoverwonImage.pixel_data;
+            int i=0;
+            for (int y = 0; y < 720; y++) // height
+            {
+                for (int x = 0; x < 1280; x++) //width
+                {	
+                        pixel->color = gameoverwinPtr[i];
+                        pixel->x = x;
+                        pixel->y = y;
+            
+                        drawPixel(pixel);
+                        i++;		
+                }
+
+            }
+            while(1){
+                int i=0;
+                for (int y = 0; y < 720; y++) // height
+                {
+                    for (int x = 0; x < 1280; x++) //width
+                    {	
+                            pixel->color = gameoverwinPtr[i];
+                            pixel->x = x;
+                            pixel->y = y;
+                
+                            drawPixel(pixel);
+                            i++;		
+                    }
+
+                }
+
+                //hit any button to continue 
+                if (button == BUTTON_A || button == BUTTON_B || button == BUTTON_L || button == BUTTON_LEFT || button == BUTTON_R || button == BUTTON_RIGHT || button == BUTTON_SEL || button == BUTTON_START || button == BUTTON_UP || button == BUTTON_Y || button == BUTTON_X){                   
+                    drawStartFrogger(pixel);
+                    startFlag = false;
+                    g.win = false;                    
+                    break;
+                }                
+                
+            }            
+        }
 
     }
-
-    // pthread_cancel(carLogic);
-    // pthread_cancel(bombLogic);
-    // pthread_cancel(logLogic);
-    // pthread_cancel(padLogic);
-    // pthread_cancel(timeRemaining);
-    // pthread_cancel(stars);
 
     /* free pixel's allocated memory */
 	free(pixel);
@@ -1277,21 +1362,21 @@ void drawRestartPause(Pixel *pixel){
 	}
 }
 
-void drawStar(Pixel *pixel){
-	short int *starPtr=(short int *) starImage.pixel_data;
-
-    int starY = rand() % 21 + 1;
-    int starX = rand() % 39;
+void* drawStar(void *idk){
+	/* initialize a pixel */
+	Pixel *pixel;
+	pixel = malloc(sizeof(Pixel));
+    
+    short int *starPtr=(short int *) starImage.pixel_data;
 
     int i=0;
-	for (int y = starY * 32 - 32; y < starY * 32; y++) // height
+	for (int y = g.starY * 32; y < g.starY * 32 + 32; y++) // height
 	{
-		for (int x = starX * 32; x < 32 + starX * 32; x++) //width
+		for (int x = g.starX * 32; x < 32 + g.starX * 32; x++) //width
 		{	
 				pixel->color = starPtr[i];
 				pixel->x = x;
 				pixel->y = y;
-	
 				drawPixel(pixel);
 				i++;		
 		}
